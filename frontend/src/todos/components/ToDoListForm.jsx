@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { makeStyles } from '@material-ui/styles'
-import { TextField, Card, CardContent, CardActions, Button, Typography} from '@material-ui/core'
+import { TextField, Card, CardContent, CardActions, Button, Typography, Checkbox } from '@material-ui/core'
 import DeleteIcon from '@material-ui/icons/Delete'
 import AddIcon from '@material-ui/icons/Add'
 
@@ -46,6 +46,10 @@ export const ToDoListForm = ({ toDoList, saveToDoList }) => {
               <Typography className={classes.standardSpace} variant='h6'>
                 {index + 1}
               </Typography>
+              <Checkbox
+                color="primary"
+                inputProps={{ 'aria-label': 'secondary checkbox' }}
+              />
               <TextField
                 label='What to do?'
                 value={name}
@@ -57,6 +61,16 @@ export const ToDoListForm = ({ toDoList, saveToDoList }) => {
                   ])
                 }}
                 className={classes.textField}
+              />
+              <TextField
+                id="date"
+                label="Due Date"
+                type="date"
+                defaultValue="2017-05-24"
+                className={classes.textField}
+                InputLabelProps={{
+                  shrink: true,
+                }}
               />
               <Button
                 size='small'

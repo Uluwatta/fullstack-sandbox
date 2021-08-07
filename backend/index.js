@@ -6,6 +6,7 @@ app.use(cors())
 
 const PORT = 3001
 
-app.get('/', (req, res) => res.send('Hello World!'))
+app.use(express.json()) // for parsing application/json
+app.use('/api/todolists', require('./api/todolists'));
 
-app.listen(PORT, () => console.log(`Example app listening on port ${PORT}!`))
+app.listen(PORT, () => console.log(`Things to do app listening on port ${PORT}!`))
