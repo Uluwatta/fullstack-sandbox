@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { makeStyles } from '@material-ui/styles'
-import { TextField, Card, CardContent, CardActions, Button, Typography, Checkbox } from '@material-ui/core'
-import DeleteIcon from '@material-ui/icons/Delete'
+import { Card, CardContent, CardActions, Button, Typography } from '@material-ui/core'
 import AddIcon from '@material-ui/icons/Add'
+import { Todo } from './Todo'
+import { API_URL } from '../Constants'
 
 const useStyles = makeStyles({
   card: {
@@ -25,83 +26,103 @@ const useStyles = makeStyles({
   }
 })
 
-export const ToDoListForm = ({ toDoList, saveToDoList }) => {
+export const ToDoListForm = ({ activeList, onListCompletion }) => {
   const classes = useStyles()
-  const [todos, setTodos] = useState(toDoList.todos)
+  const [todoList, setTodoList] = useState({});
 
-  const handleSubmit = event => {
-    event.preventDefault()
-    saveToDoList(toDoList.id, { todos })
+  const getTodoList = async (listId) => {
+    const res = await fetch(`${API_URL}/todolists/${listId}/`);
+    const data = await res.json();
+    return data;
   }
+
+  const saveTodo = async (listId, todo) => {
+    const res = await fetch(`${API_URL}/todolists/${listId}/todos/`, {
+      method: 'POST',
+      headers: {
+        'Content-type': 'application/json'
+      },
+      body: JSON.stringify(todo)
+    });
+    const data = await res.json();
+    const newTodoList = { ...todoList, todos: [...todoList.todos, data] }
+    setTodoList(newTodoList);
+    onListCompletion(activeList, checkCompletion(newTodoList));
+    return data;
+  }
+
+  const updateTodo = async (todo) => {
+    const res = await fetch(`${API_URL}/todolists/${activeList}/todos/${todo.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-type': 'application/json'
+      },
+      body: JSON.stringify(todo)
+    });
+    const data = await res.json();
+    const newTodoList = { ...todoList, todos: [...todoList.todos.map((t) => t.id === todo.id ? data.todo : t)] }
+    setTodoList(newTodoList);
+    onListCompletion(activeList, checkCompletion(newTodoList));
+    return data;
+  }
+
+  const deleteTodo = async (todoId) => {
+    const res = await fetch(`${API_URL}/todolists/${activeList}/todos/${todoId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-type': 'application/json'
+      }
+    });
+    const data = await res.json();
+    const newTodoList = { ...todoList, todos: todoList.todos.filter(todo => todo.id !== todoId) }
+    setTodoList(newTodoList);
+    onListCompletion(activeList, checkCompletion(newTodoList));
+    return data;
+  }
+
+  const checkCompletion = (list) => {
+    return list.todos && list.todos.reduce((tot, todo) => todo.done && tot, true);
+  }
+
+  useEffect(() => {
+    const setTodoListOnLoad = async () => {
+      const todoList = await getTodoList(activeList);
+      setTodoList(todoList);
+    }
+    setTodoListOnLoad();
+  }, [activeList])
 
   return (
     <Card className={classes.card}>
       <CardContent>
         <Typography component='h2'>
-          {toDoList.title}
+          {todoList.title}
         </Typography>
-        <form onSubmit={handleSubmit} className={classes.form}>
-          {todos.map((name, index) => (
-            <div key={index} className={classes.todoLine}>
-              <Typography className={classes.standardSpace} variant='h6'>
-                {index + 1}
-              </Typography>
-              <Checkbox
-                color="primary"
-                inputProps={{ 'aria-label': 'secondary checkbox' }}
-              />
-              <TextField
-                label='What to do?'
-                value={name}
-                onChange={event => {
-                  setTodos([ // immutable update
-                    ...todos.slice(0, index),
-                    event.target.value,
-                    ...todos.slice(index + 1)
-                  ])
-                }}
-                className={classes.textField}
-              />
-              <TextField
-                id="date"
-                label="Due Date"
-                type="date"
-                defaultValue="2017-05-24"
-                className={classes.textField}
-                InputLabelProps={{
-                  shrink: true,
-                }}
-              />
-              <Button
-                size='small'
-                color='secondary'
-                className={classes.standardSpace}
-                onClick={() => {
-                  setTodos([ // immutable delete
-                    ...todos.slice(0, index),
-                    ...todos.slice(index + 1)
-                  ])
-                }}
-              >
-                <DeleteIcon />
-              </Button>
-            </div>
+        <>
+          {todoList && todoList.todos && todoList.todos.map((todo, index) => (
+            <Todo
+              key={todo.id}
+              number={index + 1}
+              todo={todo}
+              deleteTodo={deleteTodo}
+              updateTodo={updateTodo}
+            />
           ))}
           <CardActions>
             <Button
               type='button'
               color='primary'
               onClick={() => {
-                setTodos([...todos, ''])
+                saveTodo(activeList, { name: '', done: false, 'dueDate': '' })
               }}
             >
               Add Todo <AddIcon />
             </Button>
-            <Button type='submit' variant='contained' color='primary'>
+            {/* <Button type='submit' variant='contained' color='primary'>
               Save
-            </Button>
+            </Button> */}
           </CardActions>
-        </form>
+        </>
       </CardContent>
     </Card>
   )
