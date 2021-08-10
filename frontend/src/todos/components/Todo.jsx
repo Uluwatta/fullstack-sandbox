@@ -65,7 +65,7 @@ export const Todo = ({ number, todo, deleteTodo, updateTodo }) => {
                 label="Due Date"
                 type="date"
                 value={!dueDate ? new Date().toISOString().split('T')[0] : dueDate}
-                className={classes.textField}
+                className={classes.standardSpace}
                 onChange={event => {
                     setDueDate(event.target.value);
                     updateTodo({ id: todo.id, dueDate: event.target.value });
